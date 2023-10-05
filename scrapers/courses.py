@@ -7,8 +7,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
-
 chromedriver_path = "/Users/jaspreetSinghSodhi/downloads/chromedriver"
 chrome_options = Options()
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -17,15 +15,11 @@ driver = webdriver.Chrome( options=chrome_options)
 
 
 
-def get_courses(url , name, offered_by, ratings, reviews):
+def get_courses(url , name, offered_by, ratings, reviews, others):
 
     driver.get(url)
 
-    wait = WebDriverWait(driver, 5)
-
-    # search_box  = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@placeholder='What do you want to learn?']")))
-    # search_box.send_keys("Data Science")
-    # search_box.send_keys(Keys.ENTER)
+    wait = WebDriverWait(driver, timeout= 15)
 
     course_name = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='cds-9 css-18msmec cds-10']//li//div[@class='cds-ProductCard-header']//h3")))
 
@@ -34,8 +28,8 @@ def get_courses(url , name, offered_by, ratings, reviews):
     course_rating = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='cds-9 css-18msmec cds-10']//li//div[@class='product-reviews css-pn23ng']//p[@class='cds-119 css-11uuo4b cds-121']")))
     
     course_reviews = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='cds-9 css-18msmec cds-10']//li//div[@class='product-reviews css-pn23ng']//p[@class='cds-119 css-dmxkm1 cds-121']")))
-    
 
+    other = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='cds-9 css-18msmec cds-10']//li//div[@class='cds-CommonCard-metadata']//p")))
 
     for course in course_name:
         name.append(course.text)
@@ -49,18 +43,43 @@ def get_courses(url , name, offered_by, ratings, reviews):
     for review in course_reviews:
         reviews.append(review.text)
 
+    for other_info in other:
+        others.append(other_info.text)
+       
+
+
+def make_csv(file_name, headers, *lists):
+    csv_filename = file_name + ".csv"
+
+    transposed_lists = list(zip(*lists))
+
+    with open(csv_filename, mode='w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+
+        writer.writerow(headers)
+
+        for row in transposed_lists:
+            writer.writerow(row)
+
+    print(f"CSV file '{csv_filename}' has been created.")
+
+
+
  
 
-def automate_coursera(base_url, name, offered_by, rating, reviews):
+def automate_coursera(base_url, name, offered_by, rating, reviews , others):
 
      
     total_pages = 84
 
+    
     for page in range(1, total_pages + 1):
+
+        print(f"Getting page: {page}")
 
         url = base_url + str(page)
 
-        get_courses(url , name, offered_by, rating, reviews)
+        get_courses(url , name, offered_by, rating, reviews  , others)
 
         
     
@@ -76,7 +95,12 @@ if __name__ == '__main__':
     offered_by = []
     rating = []
     reviews = []
-    automate_coursera(base_url , name, offered_by, rating, reviews)
+    others = []
+    automate_coursera(base_url , name, offered_by, rating, reviews , others)
+
+    headers = ["Course Name", "Offered By", "Rating", "Reviews" , "Other" ] 
+
+    make_csv("Coursera", headers, name, offered_by, rating, reviews , others)
 
     while True:
         pass
